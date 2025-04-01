@@ -9,10 +9,10 @@ O Spring Boot 3.x [1] necessita a versão 2 da biblioteca springdoc-openapi [3].
 ``` xml
 <!--... -->
 	<dependencies>
-		<dependency>
+        <dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.1.0</version>
+			<version>2.8.6</version>
 		</dependency>
 	</dependencies>
 <!--... -->
@@ -71,10 +71,10 @@ Esse exemplo utiliza um projeto SpringBoot utilizando o Maven para gerenciamento
 Na sequência será realizada a configuração na classe principal da aplicação **ServerApplication**.
 
 ```java
-\\...
+//...
 @SpringBootApplication
 public  class  ServerApplication {
-	\\...
+	//...
 	@Bean
 	public  static  BeanFactoryPostProcessor  dependsOnPostProcessor() {
 		return bf -> {
@@ -102,7 +102,7 @@ public  class  ServerApplication {
 		dsv.afterPropertiesSet();
 		return dsv;
 	}
-	\\...
+	//...
 }
 ```
 O próximo passo é configurar as credenciais de acesso ao banco de dados no arquivo de configuração **application.yml**. O banco de dados utilizado neste exemplo foi o H2, mas pode ser alterado para utilizar qualquer outro SGBD (PostgreSQL, MongoDB, MySQL, MariaDB, Microsoft SQL Server, entre outros). O arquivo está dividido em *profiles* sendo que o profile ativo é o **dev** cada conjunto de '- - - ' delimita um profile.
@@ -169,15 +169,15 @@ spring:
   flyway:
     locations: classpath:/db/test
 ```
-Após as configurações iniciais é necessário criar a pasta em que serão armazenados os scripts SQL para criação/alteração dos *schemas*. O caminho padrão é: **src/main/resources/db/migration**. Mas nesse projeto esse caminho foi editado no aquivo **application.yml**, sendo que para cada *profile* de execução foi criado um caminho diferente para armazenar os *scripts*. Por exemplo, **flyway: locations: classpath:/db/dev** é o caminho dos *scripts* para o *profile*  **dev** utilizado para o desenvolvimento.
+Após as configurações iniciais é necessário criar a pasta em que serão armazenados os _scripts_ SQL para criação/alteração dos *schemas*. O caminho padrão é: **src/main/resources/db/migration**. Mas nesse projeto esse caminho foi editado no aquivo **application.yml**, sendo que para cada *profile* de execução foi criado um caminho diferente para armazenar os *scripts*. Por exemplo, **flyway: locations: classpath:/db/dev** é o caminho dos *scripts* para o *profile*  **dev** utilizado para o desenvolvimento.
 
-Para nomear os arquivos de script deve ser adotado o padrão da biblioteca, o qual também possui uma ordem de execução, tudo está descrito na [documentação do Flyway](https://flywaydb.org/documentation/concepts/migrations.html#naming-1) [5].
+Para nomear os arquivos de _script_ deve ser adotado o padrão da biblioteca, o qual também possui uma ordem de execução, tudo está descrito na [documentação do Flyway](https://flywaydb.org/documentation/concepts/migrations.html#naming-1) [5].
 
 ### Funcionamento
 
- Após criados os arquivos de script SQL nos diretórios e nomeados conforme a documentação, será possível realizar a primeira migração, a qual contém o *script* inicial para criação do banco de dados. Executando o projeto as migrações serão executadas na ordem do versionamento e para cada script executado será adicionado um registro na tabela **flyway_schema_history**.
+ Após criados os arquivos de _script_ SQL nos diretórios e nomeados conforme a documentação, será possível realizar a primeira migração, a qual contém o *script* inicial para criação do banco de dados. Executando o projeto as migrações serão executadas na ordem do versionamento e para cada script executado será adicionado um registro na tabela **flyway_schema_history**.
 
-A tabela **flyway_schema_history** contém uma chave primária, a versão do banco de dados, a descrição, o tipo do *script* (geralmente SQL), o nome do arquivo do script, o _checksum_ do arquivo de *script*. Nessa tabela também é exibido o usuário do banco de dados que foi utilizado para executar o *script*, a data de execução, o tempo de execução e por fim um valor booleano indicando se a migração ocorreu com sucesso.
+A tabela **flyway_schema_history** contém uma chave primária, a versão do banco de dados, a descrição, o tipo do *script* (geralmente SQL), o nome do arquivo do _script_, o _checksum_ do arquivo de *script*. Nessa tabela também é exibido o usuário do banco de dados que foi utilizado para executar o *script*, a data de execução, o tempo de execução e por fim um valor booleano indicando se a migração ocorreu com sucesso.
 
 O *framework* Flyway executa os passos abaixo para validar o banco de dados da aplicação:
 
