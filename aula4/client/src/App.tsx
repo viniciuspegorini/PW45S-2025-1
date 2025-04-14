@@ -11,6 +11,7 @@ import { ProductListPageV2 } from "./pages/ProductListPageV2";
 import { ProductFormPageV2 } from "./pages/ProductFormPageV2";
 import { NotFound } from "./pages/NotFound";
 import { Unauthorized } from "./pages/Unauthorized";
+import { RequireAuth } from "./components/RequireAuth";
 
 export function App() {
   return (
@@ -22,19 +23,23 @@ export function App() {
         <Route path="unauthorized" element={<Unauthorized />} />
 
         {/* protected routes - Roles: User and Admin */}
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/" element={<HomePage />} />
-        <Route path="/categories" element={<CategoryListPage />} />
-        <Route path="/categories/new" element={<CategoryFormPage />} />
-        <Route path="/categories/:id" element={<CategoryFormPage />} />
-        <Route path="/products" element={<ProductListPage />} />
-        <Route path="/products/new" element={<ProductFormPage />} />
-        <Route path="/products/:id" element={<ProductFormPage />} />
+        <Route element={<RequireAuth allowedRoles={["ROLE_USER", "ROLE_ADMIN"]} />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/categories" element={<CategoryListPage />} />
+          <Route path="/categories/new" element={<CategoryFormPage />} />
+          <Route path="/categories/:id" element={<CategoryFormPage />} />
+          <Route path="/products" element={<ProductListPage />} />
+          <Route path="/products/new" element={<ProductFormPage />} />
+          <Route path="/products/:id" element={<ProductFormPage />} />
+        </Route>
 
         {/* protected routes - Role: Admin */}
-        <Route path="/product-v2" element={<ProductListPageV2 />} />
-        <Route path="/product-v2/new" element={<ProductFormPageV2 />} />
-        <Route path="/product-v2/:id" element={<ProductFormPageV2 />} />
+        <Route element={<RequireAuth allowedRoles={["ROLE_ADMIN"]} />}>
+          <Route path="/product-v2" element={<ProductListPageV2 />} />
+          <Route path="/product-v2/new" element={<ProductFormPageV2 />} />
+          <Route path="/product-v2/:id" element={<ProductFormPageV2 />} />
+        </Route>
 
         {/* catch all */}
         <Route path="*" element={<NotFound />} />

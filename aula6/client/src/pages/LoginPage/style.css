@@ -1,0 +1,14 @@
+ 
+.social-btn {
+    margin-bottom: 10px;
+    font-weight: 400;
+    font-size: 16px;
+    margin-top: 7px;
+    text-align: center;
+  }
+  
+  .social-btn img {
+    height: 24px;
+    float: left;  
+  }
+  
