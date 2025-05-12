@@ -99,6 +99,18 @@
 			<version>3.4.5</version>
 		</dependency>
 
+		<!-- Google Authentication -->
+		<dependency>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>2.6.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.oauth-client</groupId>
+			<artifactId>google-oauth-client</artifactId>
+			<version>1.35.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

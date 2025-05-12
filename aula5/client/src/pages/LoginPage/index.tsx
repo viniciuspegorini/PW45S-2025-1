@@ -6,15 +6,24 @@ import { Input } from "../../components/Input";
 import { AuthContext } from "../../context/AuthContext";
 import AuthService from "../../services/AuthService";
 import "./style.css";
+import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 
 export function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [apiError, setApiError] = useState("");
   const [pendingApiCall, setPendingApiCall] = useState(false);
-  const { handleLogin, loading } = useContext(AuthContext);
+  const { handleLogin, loading, handleLoginSocial } = useContext(AuthContext);
   const navigate = useNavigate();
   const [disableSubmit, setDisableSubmit] = useState(true);
+
+  // Google Login
+  const onSuccess = (response: CredentialResponse) => {
+    console.log(response);
+    if (response.credential) {
+      handleLoginSocial(response.credential);
+    }
+  }
 
   useEffect(() => {
     setApiError("");
@@ -103,6 +112,15 @@ export function LoginPage() {
           text="Autenticar"
           pendingApiCall={pendingApiCall}
         />
+        <div className="mb-3">
+          <GoogleLogin 
+            locale="pt-BR"
+            onSuccess={onSuccess}
+            onError={() => {
+              setApiError("Erro ao autenticar com o Google!");
+            }}
+          />
+        </div>
 
         <div className="text-center">
           Não possui cadastro?{" "}

@@ -53,6 +53,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
         String targetUrl = redirectUri.orElse(getDefaultTargetUrl());
 
+        //http://localhost:5173/login?token=jwt
         String token = tokenProvider.createToken(authentication);
         return UriComponentsBuilder.fromUriString(targetUrl)
                 .queryParam("token", token)

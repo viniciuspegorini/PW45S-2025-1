@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "../../lib/axios";
 import { AuthenticatedUser, AuthenticationResponse } from "../../commons/types";
 import { useNavigate } from "react-router-dom";
+import { set } from "zod";
 
 export function useAuth() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -41,11 +42,28 @@ export function useAuth() {
     setAuthenticated(true);
   }
 
+  async function handleLoginSocial(idToken: string) {
+    setLoading(true);
+    api.defaults.headers.common["Auth-Id-Token"] = `Bearer ${idToken}`;
+    const response = await api.post("/auth-social");
+    console.log(response);
+
+    localStorage.setItem("token", JSON.stringify(response.data.token));
+    localStorage.setItem("user", JSON.stringify(response.data.user));
+    api.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
+    setAuthenticatedUser(response.data.user);
+    setAuthenticated(true);
+    api.defaults.headers.common["Auth-Id-Token"] = '';
+    setLoading(false);
+    navigate("/");
+  }
+
   return {
     authenticated,
     authenticatedUser,
     loading,
     handleLogin,
     handleLogout,
+    handleLoginSocial,
   };
 }

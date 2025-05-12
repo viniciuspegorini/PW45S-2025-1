@@ -7,6 +7,7 @@ interface AuthContextType {
   authenticatedUser?: AuthenticatedUser;
   loading: boolean;
   handleLogin: (response: AuthenticationResponse) => void;
+  handleLoginSocial: (idToken: string) => void;
   handleLogout: () => void;
 }
 
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     authenticatedUser,
     loading,
     handleLogin,
+    handleLoginSocial,
     handleLogout,
   } = useAuth();
 
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         authenticated,
         authenticatedUser,
         handleLogin,
+        handleLoginSocial,
         handleLogout,
       }}
     >

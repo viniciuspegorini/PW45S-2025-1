@@ -45,6 +45,10 @@ public class User implements UserDetails {
         inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id") )
     private Set<Authority> userAuthorities;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+
     @Override
     @Transient
     @JsonIgnore
