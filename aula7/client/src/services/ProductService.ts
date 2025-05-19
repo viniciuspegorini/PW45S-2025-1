@@ -1,8 +1,8 @@
 import { Product } from "../commons/types";
 import { api } from "../lib/axios";
 
-const save = (entity: Product) => {
-  return api.post("/products", entity);
+const save = (formData: FormData) => {
+  return api.post("/products/upload-db", formData);
 };
 
 const findAll = () => {

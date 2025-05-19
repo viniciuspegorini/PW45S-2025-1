@@ -36,4 +36,17 @@ public class ProductController extends CrudController<Product, ProductDto, Long>
         return this.modelMapper;
     }
 
+    @PostMapping("upload-fs")
+    public Product save(
+            @RequestPart("product") @Valid Product product,
+            @RequestPart("image") MultipartFile file) {
+        return productService.saveImage(file, product);
+    }
+
+    @PostMapping("upload-db")
+    public Product saveDB(
+            @RequestPart("product") @Valid Product product,
+            @RequestPart("image") MultipartFile file) {
+        return productService.saveImageFile(file, product);
+    }
 }

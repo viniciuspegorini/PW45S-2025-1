@@ -5,6 +5,7 @@ import { ButtonWithProgress } from "../../components/ButtonWithProgress";
 import { Input } from "../../components/Input";
 import CategoryService from "../../services/CategoryService";
 import ProductService from "../../services/ProductService";
+import { set } from "zod";
 
 export function ProductFormPage() {
   const [form, setForm] = useState({
@@ -13,8 +14,10 @@ export function ProductFormPage() {
     price: 0,
     description: "",
     category: undefined,
+    imageName: "",
+    imageFileName: "",
+    imageFile: "",
   });
-  const [image, setImage] = useState<any | null>(null);
   const [errors, setErrors] = useState({
     id: "",
     name: "",
@@ -25,9 +28,12 @@ export function ProductFormPage() {
   const [pendingApiCall, setPendingApiCall] = useState(false);
   const [apiError, setApiError] = useState("");
   const [categories, setCategories] = useState([]);
+  const [image, setImage] = useState<any | null>(null);
 
   const navigate = useNavigate();
   const { id } = useParams();
+
+
 
   useEffect(() => {
     CategoryService.findAll()
@@ -43,6 +49,9 @@ export function ProductFormPage() {
                   price: response.data.price,
                   description: response.data.description,
                   category: response.data.category.id,
+                  imageName: response.data.imageName,
+                  imageFileName: response.data.imageFileName,
+                  imageFile: response.data.imageFile,
                 });
                 setApiError("");
               } else {
@@ -89,6 +98,10 @@ export function ProductFormPage() {
     });
   };
 
+  const onFileChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    setImage(event.target.files ? event.target.files[0] : null);
+  };
+
   const onSubmit = () => {
     const product: Product = {
       id: form.id,
@@ -99,7 +112,15 @@ export function ProductFormPage() {
     };
     setPendingApiCall(true);
 
-    ProductService.save(product)
+    const formData = new FormData();
+    formData.append("image", image);
+
+    const blob = new Blob([JSON.stringify(product)], {
+      type: "application/json",
+    });
+    formData.append("product", blob);
+
+    ProductService.save(formData)
       .then((response) => {
         setPendingApiCall(false);
         navigate("/products");
@@ -174,6 +195,23 @@ export function ProductFormPage() {
           <div className="invalid-feedback d-block">{errors.category}</div>
         )}
       </div>
+      <div className="col-12 mb-3">
+        <label>Imagem</label>
+        <input
+          type="file"
+          className="form-control"
+          name="image"
+          onChange={onFileChangeHandler}
+        />
+        {form.imageFile && (
+          <img
+            src={`data:image/jpeg;base64,${form.imageFile}`}
+            alt="Preview"
+            style={{ width: "100px", height: "100px" }}
+          />
+        )}
+      </div>
+
       <div className="text-center">
         <ButtonWithProgress
           className="btn btn-primary"

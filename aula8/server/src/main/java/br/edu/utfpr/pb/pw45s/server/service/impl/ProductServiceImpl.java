@@ -37,7 +37,8 @@ public class ProductServiceImpl extends CrudServiceImpl<Product, Long>
     public Product save(Product entity, MultipartFile file) {
         String fileType = FileTypeUtils.getFileType(file);
         if (fileType != null) {
-            FileResponse fileResponse = minioService.putObject(file, "commons",
+            FileResponse fileResponse =
+                    minioService.putObject(file, "commons",
                     fileType);
             entity.setImageName(fileResponse.getFilename());
             entity.setContentType(fileResponse.getContentType());

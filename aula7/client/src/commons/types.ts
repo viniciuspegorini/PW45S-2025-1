@@ -35,4 +35,6 @@ export interface Product {
   description: string;
   price: number;
   category: Category;
+  imageName?: string;
+  imageFileName?: string;
 }
