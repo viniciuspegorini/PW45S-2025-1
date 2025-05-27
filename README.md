@@ -52,9 +52,12 @@
 - Upload de arquivos com armazenamento em um **sistema de armazenamento de objetos** utilizando **MINIO** (sistema de armazenamento de objetos **semelhante ao Amazon S3**).
 
 ### aula9
-- Deploy de aplicações utilizando Docker.
+- Integração da API REST com APIs de processamento de Inteligência Artificial (IA).
 
 ### aula10
+- Deploy de aplicações utilizando Docker.
+
+### aula11
 - Consultas na API com Spring Data JPA e Specification.
 
 
@@ -129,3 +132,6 @@
 4. Datas das apresentações: 05/05/2025 e 06/05/2025
 
 
+## 2 - Projeto final
+
+Link com as instruções e modelo para desenvolvimento do projeto: [https://drive.google.com/drive/folders/1Ks9UTtHuFawFdYsu-km6pTxMvd_uPBH7](https://drive.google.com/drive/folders/1Ks9UTtHuFawFdYsu-km6pTxMvd_uPBH7)
