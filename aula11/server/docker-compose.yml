@@ -1,0 +1,67 @@
+version: "3.9"
+########################### SERVICES
+services:
+  ########################### POSTGRESQL
+  postgresql:
+    image: "postgres:14.2"
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    networks:
+      - database
+      - web
+    restart: unless-stopped
+  ########################### MINIO
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+    volumes:
+      - ./data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    restart: unless-stopped
+    command: server /data --console-address :9001
+  ########################### SERVER
+  server:
+    image: server
+    container_name: server
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - SERVER_PORT=${SERVER_PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - TZ=America/Sao_Paulo
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - web
+      - database    
+
+########################### NETWORKS
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true

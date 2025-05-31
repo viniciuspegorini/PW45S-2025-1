@@ -1,0 +1,73 @@
+########################### SERVICES
+services:
+  ############################# TRAEFIK 
+  traefik:
+    container_name: traefik
+    image: traefik:v3.4
+    command: # CLI arguments
+      # Basic configs
+      - "--entrypoints.web.address=:80" # HTTP
+      - "--entrypoints.websecure.address=:443" # HTTPS
+      - "--entrypoints.postgresql.address=:5432" # PostgreSQL access
+      - "--providers.docker=true"
+      - "--providers.docker.network=web"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--log.level=DEBUG"
+      # Certificates (DNS is configured to use subdomains with wildcard *.sub.. )
+      - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=${DNS_PROVIDER}"
+      # Set up the TLS configuration for our websecure listener subdomain with wildcard
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
+      - "--entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}"
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./appdata/traefik/acme.json:/acme.json"
+    environment:
+      - TZ=America/Sao_Paulo
+      - CF_API_TOKEN=${CF_API_TOKEN}
+    labels:
+      # Dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.services.traefik.loadbalancer.server.port=80"
+      # subdomain with wildcard
+      - "traefik.http.routers.traefik.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.traefik.tls.domains[0].sans=*.${DOMAIN}"
+      # Authentication middleware, prefix of traefik and traefik dashboard startin in /traefik
+      - "traefik.http.routers.traefik.middlewares=strip,auth"
+      - "traefik.http.middlewares.strip.stripprefix.prefixes=/traefik"
+      # HTTP > HTTPS
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # Secure
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+############################# NETWORKS     
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true

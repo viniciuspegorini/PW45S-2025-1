@@ -1,0 +1,29 @@
+version: "3.9"
+
+########################### SERVICES
+services:
+  ########################### CLIENT
+  client:
+    image: client
+    container_name: client 
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: unless-stopped   
+    ports:
+      - 8081:80
+    networks:
+      - web
+
+########################### NETWORKS
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true

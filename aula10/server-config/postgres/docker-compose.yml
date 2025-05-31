@@ -1,0 +1,48 @@
+########################### SERVICES
+services:
+  ########################### POSTGRESQL
+  postgresql:
+    image: "postgres:14.2"
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./appdata/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+    environment:
+      - POSTGRES_DB=postgres    
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Utfpr@D4!NFDB
+      - TZ=America/Sao_Paulo
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.tcp.routers.postgresql.rule=HostSNI(`app.pb.utfpr.edu.br`)
+      - traefik.tcp.routers.postgresql.tls=true
+      - traefik.tcp.routers.postgresql.entrypoints=postgresql
+      - traefik.tcp.routers.postgresql.tls.certresolver=letsencrypt
+      - traefik.tcp.services.postgresql.loadbalancer.server.port=5432      
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+########################### NETWORKS    
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true
+
+#docker exec -it postgresql psql -U postgres -c "CREATE DATABASE dainf-labs;"
+#docker exec -it postgresql psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE dainf-labs TO postgres;"

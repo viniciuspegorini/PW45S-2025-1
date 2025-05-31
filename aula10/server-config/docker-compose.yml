@@ -1,0 +1,201 @@
+########################### SERVICES
+services:
+  ############################# TRAEFIK - Reverse Proxy
+  # Traefik is a modern reverse proxy and load balancer that makes deploying microservices easy.
+  # It is designed to work seamlessly with Docker, Kubernetes, and other container orchestrators.
+  # It automatically discovers services and configures itself to route traffic to them.
+  traefik:
+    container_name: traefik
+    image: traefik:v3.4
+    command: # CLI arguments
+      # Basic configs
+      - "--entrypoints.web.address=:80" # HTTP
+      - "--entrypoints.websecure.address=:443" # HTTPS
+      - "--entrypoints.postgresql.address=:5432" # PostgreSQL access
+      - "--providers.docker=true"
+      - "--providers.docker.network=web"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--log.level=DEBUG"
+      # Certificates (DNS is configured to use subdomains with wildcard *.sub.. )
+      - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=${DNS_PROVIDER}"
+      # Set up the TLS configuration for our websecure listener subdomain with wildcard
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
+      - "--entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}"
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./appdata/traefik/acme.json:/acme.json"
+    environment:
+      - TZ=America/Sao_Paulo
+      - CF_API_TOKEN=${CF_API_TOKEN}
+    labels:
+      # Dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.services.traefik.loadbalancer.server.port=80"
+      # subdomain with wildcard
+      - "traefik.http.routers.traefik.tls.domains[0].main=${DOMAIN}"
+      - "traefik.http.routers.traefik.tls.domains[0].sans=*.${DOMAIN}"
+      # Authentication middleware, prefix of traefik and traefik dashboard startin in /traefik
+      - "traefik.http.routers.traefik.middlewares=strip,auth"
+      - "traefik.http.middlewares.strip.stripprefix.prefixes=/traefik"
+      # HTTP > HTTPS
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # Secure
+      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+  ########################### JENKINS - Continuous Integration
+  # Jenkins is an open-source automation server that helps automate the parts of software development related to building, testing, and deploying.
+  # It provides hundreds of plugins to support building, deploying, and automating any project.
+  jenkins:
+    build: ./
+    privileged: true    
+    container_name: jenkins
+    user: root
+    restart: unless-stopped
+    ports:
+      - 8081:8080
+      - 50000:50000
+    labels: # Configs for traefik
+      - "traefik.enable=true"
+      - "traefik.http.routers.jenkins.service=jenkins"
+      - "traefik.http.routers.jenkins.rule=Host(`jenkins.${DOMAIN}`)"
+      - "traefik.http.routers.jenkins.entrypoints=websecure"
+      - "traefik.http.routers.jenkins.tls.certresolver=letsencrypt"
+      - "traefik.http.services.jenkins.loadbalancer.server.port=8080"
+    networks:
+      - web
+    environment:
+      - TZ=America/Sao_Paulo
+      - JENKINS_URL=https://jenkins.${DOMAIN}/
+    volumes:
+      - "./appdata/jenkins:/var/jenkins_home"
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/local/bin/docker:/usr/local/bin/docker
+      - "./appdata/jenkins_tmp:/tmp"
+
+  ########################### MINIO - Object Storage
+  # MinIO is a high-performance, S3-compatible object storage service that is designed for large-scale data storage.
+  # It is ideal for storing unstructured data such as photos, videos, log files, backups, and container images.
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_BROWSER_REDIRECT_URL=http://minio-console.${DOMAIN}
+      - TZ=America/Sao_Paulo
+    volumes:
+      - ./appdata/minio/data:/data
+    ports:
+      - 8000:9000
+      - 8001:9001
+    command: server /data --console-address :9001
+    labels: # Configs for traefik
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.constraint-label=web
+      - traefik.http.routers.minio.service=minio
+      - traefik.http.routers.minio.rule=Host(`minio.${DOMAIN}`)
+      - traefik.http.routers.minio.entrypoints=websecure
+      - traefik.http.routers.minio.tls.certresolver=letsencrypt
+      - traefik.http.services.minio.loadbalancer.server.port=9000
+      - traefik.http.routers.minio-console.service=minio-console
+      - traefik.http.routers.minio-console.rule=Host(`minio-console.${DOMAIN}`)
+      - traefik.http.services.minio-console.loadbalancer.server.port=9001
+      - traefik.http.routers.minio-console.entrypoints=websecure
+      - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+  ########################### POSTGRESQL - Database
+  # PostgreSQL is a powerful, open-source object-relational database system with more than 15 years of active development.
+  # It has a proven architecture and a strong reputation for reliability, data integrity, and correctness.
+  postgresql:
+    image: "postgres:14.2"
+    container_name: postgresql
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./appdata/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TZ=America/Sao_Paulo
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.tcp.routers.postgresql.rule=HostSNI(`viniciuspegorini.com.br`)
+      - traefik.tcp.routers.postgresql.tls=true
+      - traefik.tcp.routers.postgresql.entrypoints=postgresql
+      - traefik.tcp.routers.postgresql.tls.certresolver=letsencrypt
+      - traefik.tcp.services.postgresql.loadbalancer.server.port=5432
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+  ########################### PGADMIN - PostgreSQL Management
+  # pgAdmin is a popular open-source administration and development platform for PostgreSQL.
+  # It provides a web-based interface to manage PostgreSQL databases, allowing users to create, modify, and delete databases, tables, and other database objects.
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - "15432:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+      - TZ=America/Sao_Paulo
+      - SERVER_NAME=pgadmin.${DOMAIN}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.constraint-label=web
+      - traefik.http.routers.pgadmin.service=pgadmin
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.${DOMAIN}`)
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
+      - traefik.http.services.pgadmin.loadbalancer.server.port=80
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+############################# NETWORKS     
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true

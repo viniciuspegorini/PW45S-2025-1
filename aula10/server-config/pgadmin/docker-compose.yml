@@ -1,0 +1,41 @@
+version: "3.9"
+    
+########################### SERVICES
+services:
+  ########################### POSTGRESQL
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - "15432:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "vinicius@utfpr.edu.br"
+      PGADMIN_DEFAULT_PASSWORD: "2LYcw*o5s"
+      TZ: "America/Sao_Paulo"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.constraint-label=web
+      - traefik.http.routers.pgadmin.service=pgadmin
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.app.pb.utfpr.edu.br`)
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
+      - traefik.http.services.pgadmin.loadbalancer.server.port=15432
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+########################### NETWORKS    
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true
+    

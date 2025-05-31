@@ -1,0 +1,49 @@
+version: "3.9"
+    
+########################### SERVICES
+services:
+  ########################### POSTGRESQL
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=utfpr
+      - MINIO_ROOT_PASSWORD=Utfpr@D4!NFOS
+      - MINIO_BROWSER_REDIRECT_URL=http://minio-console.app.pb.utfpr.edu.br
+    volumes:
+      - ./appdata/minio/data:/data
+    ports:
+      - 8000:9000
+      - 8001:9001
+    command: server /data --console-address :9001
+    labels: # Configs for traefik
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.constraint-label=web
+      - traefik.http.routers.minio.service=minio
+      - traefik.http.routers.minio.rule=Host(`minio.app.pb.utfpr.edu.br`)
+      - traefik.http.routers.minio.entrypoints=websecure
+      - traefik.http.routers.minio.tls.certresolver=letsencrypt
+      - traefik.http.services.minio.loadbalancer.server.port=8000
+      - traefik.http.routers.minio-console.service=minio-console
+      - traefik.http.routers.minio-console.rule=Host(`minio-console.app.pb.utfpr.edu.br`)
+      - traefik.http.services.minio-console.loadbalancer.server.port=8001
+      - traefik.http.routers.minio-console.entrypoints=websecure
+      - traefik.http.routers.minio-console.tls.certresolver=letsencrypt
+    networks:
+      - web
+      - database
+    restart: unless-stopped
+
+########################### NETWORKS    
+networks:
+  web:
+    name: web
+    driver: bridge
+    external: true
+    attachable: true
+  database:
+    name: database
+    driver: bridge
+    external: false
+    attachable: true
